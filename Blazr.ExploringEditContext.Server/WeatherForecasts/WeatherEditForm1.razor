@@ -1,0 +1,44 @@
+﻿<h3>Weather Edit Form - Version 1</h3>
+
+<EditForm Model="_model" OnValidSubmit="this.OnValidSubmit">
+
+    <EditContextForm />
+
+    <div class="mb-2">
+        <label class="form-label">Date</label>
+        <InputDate class="form-control" @bind-Value="_model.Date" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Temperature &deg;C</label>
+        <InputNumber class="form-control" @bind-Value="_model.TemperatureC" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Summary</label>
+        <InputText class="form-control" @bind-Value="_model.Summary" />
+    </div>
+
+    <div class="mb-2 text-end">
+        <button class="btn btn-success" type="submit">Submit</button>
+    </div>
+
+</EditForm>
+
+<div class="bg-dark text-white p-1 m-5">
+<pre>Date:@_model.Date.ToShortDateString()</pre>
+<pre>Temperature &deg;C: @_model.TemperatureC</pre>
+<pre>Summary: @_model.Summary</pre>
+</div>
+
+@code {
+    private string ComponentId = Guid.NewGuid().ToString().Substring(0, 8);
+    private WeatherForecast _model = new() { Date = DateOnly.FromDateTime(DateTime.Now), Summary = "Freezing" };
+
+    private async Task OnValidSubmit()
+    {
+        // Fake an async save method
+        await Task.Yield();
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => Form Submitted ");
+    }
+}

@@ -52,3 +52,81 @@ public class WeatherForecastValidator : AbstractValidator<WeatherForecast>
     }
 }
 ```
+
+## Basic Form
+
+At this point we can write a basic edit form - `WeatherEditForm1`.
+
+```csharp
+<h3>Weather Edit Form - Version 1</h3>
+
+<EditForm Model="_model" OnValidSubmit="this.OnValidSubmit">
+
+    <div class="mb-2">
+        <label class="form-label">Date</label>
+        <InputDate class="form-control" @bind-Value="_model.Date" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Temperature &deg;C</label>
+        <InputNumber class="form-control" @bind-Value="_model.TemperatureC" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Summary</label>
+        <InputText class="form-control" @bind-Value="_model.Summary" />
+    </div>
+
+    <div class="mb-2 text-end">
+        <button class="btn btn-success" type="submit">Submit</button>
+    </div>
+
+</EditForm>
+
+<div class="bg-dark text-white p-1 m-5">
+<pre>Date:@_model.Date.ToShortDateString()</pre>
+<pre>Temperature &deg;C: @_model.TemperatureC</pre>
+<pre>Summary: @_model.Summary</pre>
+</div>
+
+@code {
+    private string ComponentId = Guid.NewGuid().ToString().Substring(0,8);
+    private WeatherForecast _model = new() { Date=DateOnly.FromDateTime(DateTime.Now), Summary="Freezing" };
+
+    private async Task OnValidSubmit()
+    {
+        // Fake an async save method
+        await Task.Yield();
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => Form Submitted ");
+    }
+}
+```
+
+There' no sight of the `EditContext` here:  we've added the model directly to the `EditForm`.  Does one exist?
+
+Yes.  All components used within the `EditForm` do something like this.  You can see it in `InputBase` [here in the AspNetCore repository](https://github.com/dotnet/aspnetcore/blob/94259788d58e16ba753900b4bf855a6aee08dcb1/src/Components/Web/src/Forms/InputBase.cs#L29). 
+
+```csharp
+[CascadingParameter] private EditContext? CascadedEditContext { get; set; }
+```
+
+Create a new component - `EditContextForm` and capture the context.
+
+```csharp
+@code {
+    [CascadingParameter] private EditContext? CascadedEditContext { get; set; }
+
+    private string ComponentId = Guid.NewGuid().ToString().Substring(0, 8);
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        // Always set the parameters first
+        parameters.SetParameterProperties(this);
+
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => EditContext exists: {this.CascadedEditContext is not null} ");
+        // Always call the base method last with an empty ParameterView - We have already set them
+        return base.SetParametersAsync(ParameterView.Empty);
+    }
+}
+```
+
