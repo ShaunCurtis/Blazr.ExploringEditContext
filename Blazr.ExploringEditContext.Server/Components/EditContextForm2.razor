@@ -1,0 +1,57 @@
+﻿@implements IDisposable
+
+@foreach (var message in this.CascadedEditContext.GetValidationMessages())
+{
+    <div class="alert alert-danger">@message</div>
+}
+
+@if (!this.CascadedEditContext.GetValidationMessages().Any())
+{
+    <div class="alert alert-success">No validation issues with the form. </div>
+}
+
+@code {
+    [CascadingParameter] private EditContext CascadedEditContext { get; set; } = default!;
+    private EditContext _editContext = default!;
+
+    private string ComponentId = Guid.NewGuid().ToString().Substring(0, 8);
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        parameters.SetParameterProperties(this);
+
+        ArgumentNullException.ThrowIfNull(this.CascadedEditContext);
+
+        // Test to see if the edit context has changed
+        // will also detect the init state as _editContext will be null
+        // and CascadingEditContext can't be null
+        if (_editContext != CascadedEditContext)
+        {
+            // If the context has changed we need to deregister the existing handlers
+            // before discarding the old context
+            this.DeRegisterEventHandlers();
+
+            // Add in a Handler to force a component render on validation state change
+            _editContext.OnValidationStateChanged += this.OnValidationStateChanged;
+        }
+
+        return base.SetParametersAsync(ParameterView.Empty);
+    }
+
+    private void DeRegisterEventHandlers()
+    {
+        if (_editContext is not null)
+            _editContext.OnValidationStateChanged -= this.OnValidationStateChanged;
+    }
+
+    private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => Validation state change");
+        this.StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        this.DeRegisterEventHandlers();
+    }
+}

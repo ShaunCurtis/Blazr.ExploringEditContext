@@ -102,15 +102,15 @@ At this point we can write a basic edit form - `WeatherEditForm1`.
 }
 ```
 
-There' no sight of the `EditContext` here:  we've added the model directly to the `EditForm`.  Does one exist?
+There' no sight of the `EditContext`:  the model is wired directly into the `EditForm`.  Does an `EditContext` exist?
 
-Yes.  All components used within the `EditForm` do something like this.  You can see it in `InputBase` [here in the AspNetCore repository](https://github.com/dotnet/aspnetcore/blob/94259788d58e16ba753900b4bf855a6aee08dcb1/src/Components/Web/src/Forms/InputBase.cs#L29). 
+All components used within the `EditForm` do something like this.  You can see it in `InputBase` [here in the AspNetCore repository](https://github.com/dotnet/aspnetcore/blob/94259788d58e16ba753900b4bf855a6aee08dcb1/src/Components/Web/src/Forms/InputBase.cs#L29). 
 
 ```csharp
 [CascadingParameter] private EditContext? CascadedEditContext { get; set; }
 ```
 
-Create a new component - `EditContextForm` and capture the context.
+Create a new component - `EditContextForm1` and capture the context.
 
 ```csharp
 @code {
@@ -129,4 +129,24 @@ Create a new component - `EditContextForm` and capture the context.
     }
 }
 ```
+
+So, yes it does exist.  You can either provide `EditForm` with a context directly or provide a `Model` for it to create one internally.  In either case, it cascades the context to it's `ChildContent`.
+
+## Field Identifiers
+
+Field Identifiers are used by the `EditContext` to identify specific fields within the model. 
+
+## Validation
+
+Examine the `EditContext` publics.  You'll see:
+
+1. `AddDataAnnotationsValidation`
+2. `EnableDataAnnotationsValidation`
+1. `GetValidationMessages`
+4. `IsValid`
+2. `NotifyValidationStateChanged`
+3. `OnValidationStateRequested`
+4. `OnValidationStateChanged`
+5. `Validate`
+
 
