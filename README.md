@@ -1,7 +1,5 @@
 # Exploring the Blazor Edit Context
 
-If you edit data in Blazor, you'll come across the `EditContext`.  It's a semi-hidden component used in the edit form.
-
 This article explores the mechanics and plumbing of the edit form and the central role of the `EditContext` in managing the edit process.
 
 ## The Demo Project
