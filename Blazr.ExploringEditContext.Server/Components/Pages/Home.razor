@@ -2,4 +2,11 @@
 
 <PageTitle>Home</PageTitle>
 
-<WeatherEditForm2/>
+@* <WeatherEditForm2 /> *@
+
+ <WeatherEditForm4 WeatherForecastUid="this.Uid"/> 
+
+@code{
+    [Parameter] public Guid Uid { get; set; } = Guid.Empty;
+
+}

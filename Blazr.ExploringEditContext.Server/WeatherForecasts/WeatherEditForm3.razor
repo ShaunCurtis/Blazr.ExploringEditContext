@@ -1,24 +1,28 @@
 ﻿@using Blazr.FluentValidation
 @using Blazr.EditStateTracker.Components
-<h3>Weather Edit Form - Version 2</h3>
+<h3>Weather Edit Form - Version 3</h3>
 
 <EditForm Model="_model" OnValidSubmit="this.OnValidSubmit">
     <BlazrEditStateTracker />
-    <EditContextForm2 />
+    <BlazrFluentValidator TRecord="WeatherForecast" TValidator="WeatherForecastValidator" />
+    <EditContextForm3 />
 
     <div class="mb-2">
         <label class="form-label">Date</label>
         <InputDate class="form-control" @bind-Value="_model.Date" />
+        <ValidationMessage For="() => _model.Date" />
     </div>
 
     <div class="mb-2">
         <label class="form-label">Temperature &deg;C</label>
         <InputNumber class="form-control" @bind-Value="_model.TemperatureC" />
+        <ValidationMessage For="() => _model.TemperatureC" />
     </div>
 
     <div class="mb-2">
         <label class="form-label">Summary</label>
         <InputText class="form-control" @bind-Value="_model.Summary" />
+        <ValidationMessage For="() => _model.Summary" />
     </div>
 
     <div class="mb-2 text-end">
@@ -35,7 +39,7 @@
 
 @code {
     private string ComponentId = Guid.NewGuid().ToString().Substring(0, 8);
-    private WeatherForecast _model = new() { Date = DateOnly.FromDateTime(DateTime.Now), Summary = "Freezing" };
+    private WeatherForecast _model = new() { Date = DateOnly.FromDateTime(DateTime.Now), TemperatureC = -40, Summary = "Freezing" };
 
     private async Task OnValidSubmit()
     {

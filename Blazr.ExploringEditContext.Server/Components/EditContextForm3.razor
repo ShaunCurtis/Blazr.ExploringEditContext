@@ -1,15 +1,15 @@
 ﻿@implements IDisposable
 
-@foreach(var message in this.CascadedEditContext.GetValidationMessages())
+@foreach (var message in this.CascadedEditContext.GetValidationMessages())
 {
     <div class="alert alert-danger">@message</div>
 }
 
-@if(!this.CascadedEditContext.GetValidationMessages().Any())
+@if (!this.CascadedEditContext.GetValidationMessages().Any())
 {
     <div class="alert alert-success">No validation issues with the form. </div>
 }
- 
+
 @code {
     [CascadingParameter] private EditContext CascadedEditContext { get; set; } = default!;
 
@@ -17,14 +17,8 @@
 
     public override Task SetParametersAsync(ParameterView parameters)
     {
-        // Always set the parameters first
         parameters.SetParameterProperties(this);
-
         ArgumentNullException.ThrowIfNull(this.CascadedEditContext);
-
-        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => EditContext exists: {this.CascadedEditContext is not null} ");
-        // Always call the base method last with an empty ParameterView - We have already set them
-
         return base.SetParametersAsync(ParameterView.Empty);
     }
 
@@ -33,8 +27,9 @@
         this.CascadedEditContext.OnValidationStateChanged += this.OnValidationStateChanged;
     }
 
-    private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e )
+    private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
     {
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => Validation state change");
         this.StateHasChanged();
     }
 

@@ -1,0 +1,103 @@
+﻿@using Blazr.FluentValidation
+@using Blazr.EditStateTracker
+@using Blazr.EditStateTracker.Components
+@inject NavigationManager NavManager
+
+<h3>Weather Edit Form - Version 4</h3>
+
+<EditForm EditContext="_editContext" OnValidSubmit="this.OnValidSubmit">
+    <BlazrEditStateTracker />
+    <BlazrFluentValidator TRecord="WeatherForecast" TValidator="WeatherForecastValidator" />
+
+    <div class="mb-2">
+        <label class="form-label">Date</label>
+        <InputDate class="form-control" @bind-Value="_model.Date" />
+        <ValidationMessage For="() => _model.Date" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Temperature &deg;C</label>
+        <InputNumber class="form-control" @bind-Value="_model.TemperatureC" />
+        <ValidationMessage For="() => _model.TemperatureC" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Summary</label>
+        <InputText class="form-control" @bind-Value="_model.Summary" />
+        <ValidationMessage For="() => _model.Summary" />
+    </div>
+
+    <div class="mb-2 text-end">
+        <button disabled="@_isClean" class="btn btn-success" type="submit">Submit</button>
+        <button hidden="@_isDirty" class="btn btn-dark" @onclick="this.Exit">Exit</button>
+        <button hidden="@_isClean" class="btn btn-danger" @onclick="() => this.Exit(true)">Exit without Saving</button>
+    </div>
+
+</EditForm>
+
+<NavigationLock ConfirmExternalNavigation="(_isDirty)" OnBeforeInternalNavigation="this.OnNavigation" />
+
+<div class="bg-dark text-white p-1 m-5">
+<pre>Date:@_model.Date.ToShortDateString()</pre>
+<pre>Temperature &deg;C: @_model.TemperatureC</pre>
+<pre>Summary: @_model.Summary</pre>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Guid WeatherForecastUid { get; set; } = Guid.Empty;
+    private string ComponentId = Guid.NewGuid().ToString().Substring(0, 8);
+    private WeatherForecast _model = default!;
+    private EditContext _editContext = default!;
+    private bool _forcedExit;
+    private bool _isDirty => _editContext.GetEditState();
+    private bool _isClean => !_isDirty;
+
+    public override async Task SetParametersAsync(ParameterView parameters)
+    {
+        parameters.SetParameterProperties(this);
+
+        if (_model is null)
+        {
+            _model = await GetWeatherForecastAsync();
+            _editContext = new(_model);
+        }
+
+        await base.SetParametersAsync(ParameterView.Empty);
+    }
+
+    // Fake async get to emulate a async data pipline call
+    private static async ValueTask<WeatherForecast> GetWeatherForecastAsync()
+    {
+        await Task.Delay(100);
+        return new() { Date = DateOnly.FromDateTime(DateTime.Now.AddDays(1)), TemperatureC = -40, Summary = "Freezing" };
+    }
+
+    private void OnNavigation(LocationChangingContext context)
+    {
+        _forcedExit = _forcedExit | _editContext.GetEditState() is false;
+        if (_forcedExit is false)
+            context.PreventNavigation();
+
+        _forcedExit = false;
+    }
+
+    private void Exit()
+        => this.Exit(false);
+
+    private void Exit(bool forced)
+    {
+        _forcedExit = forced;
+        this.NavManager.NavigateTo("/counter");
+    }
+
+    private async Task OnValidSubmit()
+    {
+        // Fake an async save method
+        await Task.Yield();
+        Console.WriteLine($"{this.GetType().Name} - {ComponentId} => Form Submitted ");
+
+        // Resets the edit context that will force the whole for to rebuild.
+        _editContext = new(_model);
+
+    }
+}

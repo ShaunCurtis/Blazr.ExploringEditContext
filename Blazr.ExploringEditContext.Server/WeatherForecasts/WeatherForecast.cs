@@ -25,7 +25,7 @@ public class WeatherForecastValidator : AbstractValidator<WeatherForecast>
 
         this.RuleFor(p => p.Date)
             .GreaterThan(DateOnly.FromDateTime(DateTime.Now))
-            .WithMessage("The date mut be in the future")
+            .WithMessage("The date must be in the future")
             .WithState(p => p);
     }
 }
