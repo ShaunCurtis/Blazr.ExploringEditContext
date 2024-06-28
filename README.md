@@ -1,4 +1,4 @@
-# Exploring the Blazor Edit Context
+# Exploring the Blazor Edit Form and Edit Context
 
 This article explores the mechanics and plumbing of the edit form and the central role of the `EditContext` in managing the edit process.
 
