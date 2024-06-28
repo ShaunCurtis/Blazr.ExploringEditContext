@@ -1,12 +1,12 @@
 # Exploring the Blazor Edit Context
 
-If you want to edit data in Blazor, you will be come across the `EditContext`.  It's a demi-hidden component used in the edit form.
+If you edit data in Blazor, you'll come across the `EditContext`.  It's a semi-hidden component used in the edit form.
 
-This article explores the mechanics and plumbing of the edit form and the central role of the `EditContext`.
+This article explores the mechanics and plumbing of the edit form and the central role of the `EditContext` in managing the edit process.
 
 ## The Demo Project
 
-The Demo solution consists of a Net8 `Blazor web App` template project, configured for *InteractiveServer* and *Global* interactivity.  This configuration is the easiest and fastest solution for debugging.
+The Demo solution consists of a Net8 `Blazor web App` template project, configured for *InteractiveServer* and *Global* interactivity.  This configuration is the simplest and fastest solution for debugging.
 
 The solution has the following Nuget packages installed:
 
@@ -28,7 +28,7 @@ public class WeatherForecast
 
 > Ignore `TrackState` for the present, we'll look at it later.
 
-Here's the FluentValidation validator for `WeatherForecast`.
+The FluentValidation validator for `WeatherForecast`.
 
 ```csharp
 public class WeatherForecastValidator : AbstractValidator<WeatherForecast>
@@ -55,7 +55,7 @@ public class WeatherForecastValidator : AbstractValidator<WeatherForecast>
 
 ## Basic Form
 
-At this point we can write a basic edit form - `WeatherEditForm1`.
+A basic edit form looks something like this - `WeatherEditForm1`.
 
 ```csharp
 <h3>Weather Edit Form - Version 1</h3>
@@ -102,9 +102,9 @@ At this point we can write a basic edit form - `WeatherEditForm1`.
 }
 ```
 
-There' no sight of the `EditContext`:  the model is wired directly into the `EditForm`.  Does an `EditContext` exist?
+`EditContext` is not in plain sight:  the model is attached directly to the `EditForm`.
 
-All components used within the `EditForm` do something like this.  You can see it in `InputBase` [here in the AspNetCore repository](https://github.com/dotnet/aspnetcore/blob/94259788d58e16ba753900b4bf855a6aee08dcb1/src/Components/Web/src/Forms/InputBase.cs#L29). 
+All Editor components within the `EditForm` do something like this.  You can see it in `InputBase` [here in the AspNetCore repository](https://github.com/dotnet/aspnetcore/blob/94259788d58e16ba753900b4bf855a6aee08dcb1/src/Components/Web/src/Forms/InputBase.cs#L29). 
 
 ```csharp
 [CascadingParameter] private EditContext? CascadedEditContext { get; set; }
@@ -130,7 +130,7 @@ Create a new component - `EditContextForm1` and capture the context.
 }
 ```
 
-So, yes it does exist.  You can either provide `EditForm` with a context directly or provide a `Model` for it to create one internally.  In either case, it cascades the context to it's `ChildContent`.
+So, it exists.  An `EditForm` can be provided with an `EditContext`, or a `Model` from which it creates one internally.  In either case, it cascades that context to it's `ChildContent`.
 
 > Note: that the cascaded `EditContext` is fixed.  Any changes in the edit context will not cause a render cascade in any components capturing the cascaded value.
 
@@ -156,17 +156,14 @@ public readonly struct FieldIdentifier : IEquatable<FieldIdentifier>
 }
 ```
 
-You either use `new` and pass in the model instance and the field name as a string, or pass in an expression [called an *Accessor*] in the form `() => _model.Summary`.
-
-You can also get a `FieldIdentifier` direcvtly from an `EditContext` instance like this:
-
-```csharp
-var fi = _editContext.Field("Summary");
-```
+An instance is created:
+1. Using `new` and passing in the model instance and the field name as a string
+2. Passing in an expression [called an *Accessor*] in the form `() => _model.Summary` to the static `Create`.
+3. Directly from the EditContext like this: `var fi = _editContext.Field("Summary");`
 
 ## State
 
-Examine the `EditContext` publics.  You'll see:
+`EditContext` exposes the following state related publics:
 
 1. `IsModified`
 2. `MarkAsUnmodified`
@@ -179,7 +176,7 @@ Examine the `EditContext` publics.  You'll see:
 private readonly Dictionary<FieldIdentifier, FieldState> _fieldStates = new Dictionary<FieldIdentifier, FieldState>();
 ```
 
-`FieldState` is an internal class that contains the *modified* state of the `FieldIdentifier`.
+`FieldState` is an internal class containing the *modified* state of the `FieldIdentifier`.
 
 ```csharp
 internal sealed class FieldState
@@ -232,9 +229,11 @@ And add it into the edit form:
 
 Run and update a field.  Nothing happens.  Why not?
 
-Our code is within a component in the form.  When the form updates, there's no change to any parameters [the cascaded `EditContext` is fixed].  We need to wire up a handler to the `OnFieldChanged` event cand fire a render.
+The code is within a component in the form.  When the form updates, there's no change to any parameters [the cascaded `EditContext` is fixed].  To trigger a render the component must register a handler on the `OnFieldChanged` event.
 
-Our component now looks like this.  The handler is registered in `OnInitialized` and calls `StateHasChanged()` to queue a render event.   Note the implementation of `IDisposable` to de-register the handler.
+The component now looks like this.  
+
+The handler is registered in `OnInitialized` and calls `StateHasChanged()` to queue a render event.   Note the implementation of `IDisposable` to de-register the handler.
 
 > Note: I wrote *"queue a render event"* not *"render the component"*.  It's important to understand the difference.  The render queue will normally be running on the same UI thread [the Synchronisation Context] as the queueing code.  The queue will only get thread time to run either when the current code block completes, or an *async* method yields.
 
@@ -276,11 +275,11 @@ Our component now looks like this.  The handler is registered in `OnInitialized`
 }
 ```
 
-The alert now appears when you change a value.  But, if you change a value back to it's original it doesn't go away.  There's no proper state management:  the controls *as-is* do not maintain the original state.
+The alert now appears when a value is changed.  Now change a value back to it's original: the alert doesn't go away.  There's no proper state management:  the out-0f-the-box controls don't maintain the original state.
 
 ### Blazr Edit State Tracker
 
-We can correct with the `BlazrEditStateTracker` component.
+The `BlazrEditStateTracker` component corrects that.
 
 ```csharp
 @using Blazr.EditStateTracker.Components
@@ -292,7 +291,7 @@ We can correct with the `BlazrEditStateTracker` component.
     <EditContextForm2 />
 ```
 
-The component wires into the cascaded `EditContext`.  On initialization, it saves the initial state of model properties marked with the `TrackState` attribute.
+The component plugs into the cascaded `EditContext`.  On initialization, it saves the initial state of model properties marked with the `TrackState` attribute.
 
 ```csharp
 public class WeatherForecast
@@ -308,7 +307,7 @@ On a `OnFieldChanged` event, it checks the state of the change field.  If necess
 
 ## Validation
 
-Examine the `EditContext` publics.  You'll see:
+`EditContext` exposes the following validation related publics:
 
 1. `AddDataAnnotationsValidation`
 2. `EnableDataAnnotationsValidation`
@@ -319,22 +318,22 @@ Examine the `EditContext` publics.  You'll see:
 4. `OnValidationStateChanged`
 5. `Validate`
  
-Ignore the top two.  They are extension methods used to add the Data Annotations Validation scheme to the `EditContext`.
+Ignore the top two.  They're extension methods used to add the Data Annotations Validation code to the `EditContext`.
 
-Validators register handlers with:
+Validators register handlers with the following events:
 
 1. `OnValidationStateRequested` to run full validations on all properties.
 2. `OnFieldChanged` to run single property validations.
 
-They log validation error messages with a `ValidationMessageStore` associated with an `EditContext` instance.
+They log validation error messages to a `ValidationMessageStore` associated with an `EditContext` instance.
 
-If either causes a validation state change, the validator calls `NotifyValidationStateChanged` which invokes handlers registered on `OnValidationStateChanged`.
+If either handler causes a validation state change, the validator calls `NotifyValidationStateChanged`.  This invokes handlers registered on the `OnValidationStateChanged` event.
 
  - `Validate` simply invokes handlers registered on `OnValidationStateChanged`.
  - `GetValidationMessages` returns all the messages in the message store, or messages for the provided field identifier or accessor.
  - `IsValid` returns the state for the provided field identifier or accessor.
 
-The `EditContext` doesn't actually do validation.  It provides the routing, events and a common interface for validation to happen.  Validators register for the necessary events on the `EditContext`, provide validation messages into the shared messagw store and notify the `EditContext` whwen it needs to invoke specific events.
+The `EditContext` doesn't actually do validation.  No registered validator, no validation.  It provides the routing, events and a common interface for validation to happen.  Validators register for the necessary events on the `EditContext`, provide validation messages into the message store, and notify the `EditContext` when it needs to invoke specific events.
 
 ### EditContextForm3
 
@@ -406,15 +405,20 @@ The `EditContext` doesn't actually do validation.  It provides the routing, even
 
 ## Form Control
 
-Now that we have the state of the form under control we can control navigation awy from the form i.e. prevent the user leaving a form with mutated data.
+What happens when the user tries to edit a dirty form? Do you want to prevent or watn the user.
 
-`NavigationLock` provides the control by locking navigation.  `BlazrEditStateTracker` provides the state.
+`NavigationLock` provides the control by locking navigation and `BlazrEditStateTracker` provides the state.
 
-The `EditContext` has a property collection that can be used to add features to the context instance.  `BlazrEditStateTracker` registers it's store in the collection and adds some extension methods to `EditContext` to facilitate interaction with the tracker.  `EditContext.GetEditState()` will return `false` if the state is clean and `true` if dirty.
+The `EditContext` has a property collection that can be used to add features to the context instance.  `BlazrEditStateTracker` registers it's store in the collection and adds some extension methods to `EditContext` to facilitate interaction with the store.  `EditContext.GetEditState()` will return `false` if the state is clean and `true` if dirty.
 
 ### WeatherEditForm4
 
-We can update our form to add the navigation control.
+This is the final version of the edit form.  Enhancements include:
+
+1. Adding of an async data pipeline call to get the `WeatherForecast` record.
+2. Explicitly creating the `EditContext` and passing it into the ``EditForm`.
+3. Adding Navigation locking when the form is dirty.
+4. Logic to hide/disable buttons based on state.
 
 ```csharp
 @using Blazr.FluentValidation
@@ -454,7 +458,7 @@ We can update our form to add the navigation control.
 
 </EditForm>
 
-<NavigationLock ConfirmExternalNavigation="(_isDirty)" OnBeforeInternalNavigation="this.OnNavigation" />
+<NavigationLock ConfirmExternalNavigation="_isDirty" OnBeforeInternalNavigation="this.OnNavigation" />
 
 <div class="bg-dark text-white p-1 m-5">
 <pre>Date:@_model.Date.ToShortDateString()</pre>
@@ -518,4 +522,4 @@ We can update our form to add the navigation control.
 }
 ```
 
-> Note that `OnValidSubmit` executes `_editContext = new(_model);`.  This creates a new `EditContext` instance.  The result is that on the next render the whole form is rebuilt with new component instances.  The old input controls, `BlazrEditStateTracker` and `BlazrFluentValidator` are disposed and destroyed. 
+> Note that `OnValidSubmit` executes `_editContext = new(_model);`.  This creates a new `EditContext` instance.  This results in a rebuild of the whole form [with new component instances] on the next render on the completing of `OnValidSubmit`.  The old input controls, `BlazrEditStateTracker` and `BlazrFluentValidator` are disposed and destroyed. 
